@@ -1,0 +1,44 @@
+WITH
+  population_vs_vaccination AS (
+  SELECT
+    death.continent,
+    death.location,
+    death.date,
+    death.population,
+    vaccination.new_vaccinations,
+    SUM(CAST(vaccination.new_vaccinations AS int)) OVER (PARTITION BY death.location ORDER BY death.location, death.date) AS rolling_people_vaccinated
+  FROM
+    `just-camera-322820.covid_data.covid_deaths` AS death
+  JOIN
+    `just-camera-322820.covid_data.covid_vaccination` AS vaccination
+  ON
+    death.location = vaccination.location
+    AND death.date = vaccination.date
+  WHERE
+    death.continent IS NOT NULL )
+SELECT
+  *,
+  (rolling_people_vaccinated/population)
+FROM
+  population_vs_vaccination 
+  
+-- Creating a view FOR Tableau
+
+CREATE VIEW
+  covid_data.percent_population_vaccinated AS
+SELECT
+  death.continent,
+  death.location,
+  death.date,
+  death.population,
+  vaccination.new_vaccinations,
+  SUM(CAST(vaccination.new_vaccinations AS int)) OVER (PARTITION BY death.location ORDER BY death.location, death.date) AS rolling_people_vaccinated
+FROM
+  `just-camera-322820.covid_data.covid_deaths` AS death
+JOIN
+  `just-camera-322820.covid_data.covid_vaccination` AS vaccination
+ON
+  death.location = vaccination.location
+  AND death.date = vaccination.date
+WHERE
+  death.continent IS NOT NULL
